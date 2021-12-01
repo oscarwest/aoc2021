@@ -7,10 +7,8 @@ export const part2 = (input: number[]): number => {
       return 0;
     }
 
-    const prevWindow = [input[currIndex - 1], input[currIndex - 2], input[currIndex - 3]].reduce(
-      sumReducer,
-    );
-    const currWindow = [curr, input[currIndex - 1], input[currIndex - 2]].reduce(sumReducer);
+    const prevWindow = input[currIndex - 1] + input[currIndex - 2] + input[currIndex - 3];
+    const currWindow = curr + input[currIndex - 1] + input[currIndex - 2];
 
     if (prevWindow < currWindow) {
       return prev + 1;
@@ -19,5 +17,3 @@ export const part2 = (input: number[]): number => {
     return prev;
   });
 };
-
-const sumReducer = (prev, curr) => prev + curr;
