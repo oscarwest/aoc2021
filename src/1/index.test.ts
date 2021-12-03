@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { part1, part2 } from './index';
 
-test('part1', () => {
+test('d1part1', () => {
   const input = fs.readFileSync(`${__dirname}/input.txt`, 'utf8').split('\n').map(Number);
 
   const res = part1(input);
@@ -9,7 +9,7 @@ test('part1', () => {
   console.log(res);
 });
 
-test('part2', () => {
+test('d1part2', () => {
   const input = fs.readFileSync(`${__dirname}/input.txt`, 'utf8').split('\n').map(Number);
 
   const res = part2(input);
