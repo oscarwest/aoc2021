@@ -12,6 +12,8 @@ export const part1 = (input: string[]): number => {
   return decimalGamma * decimalEpsilon;
 };
 
+// TODO: could use function currying here
+// https://stackoverflow.com/questions/56649385/js-function-switch-between-either-greater-than-or-less-than
 export const part2 = (input: string[]): number => {
   const ds = input.flatMap((x) => [x.split('').map(Number)]);
 
