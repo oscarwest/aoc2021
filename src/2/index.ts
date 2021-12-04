@@ -16,8 +16,6 @@ export const part1 = (input: string[]): number => {
   for (const line of input) {
     const command = parseLine(line);
 
-    console.log(command);
-
     switch (command.direction) {
       case Direction.down:
         verticalPos += command.amount;
