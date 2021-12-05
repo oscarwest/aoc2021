@@ -1,4 +1,51 @@
 export const part1 = (input: string[]): number => {
+  // eslint-disable-next-line prefer-const
+  let { drawOrder, boards } = parseInput(input);
+
+  for (const draw of drawOrder) {
+    console.log('draw', draw);
+
+    boards = markBoards(boards, draw);
+    boards = markWinners(boards, draw);
+
+    const winningBoard = boards.filter((board) => board.winningNumber !== null);
+
+    if (winningBoard && winningBoard.length > 0) {
+      return calculateBoardScore(winningBoard[0]);
+    }
+  }
+};
+
+export const part2 = (input: string[]): number => {
+  // eslint-disable-next-line prefer-const
+  let { drawOrder, boards } = parseInput(input);
+  let winningBoards: Board[] = [];
+
+  for (const draw of drawOrder) {
+    console.log('draw', draw);
+
+    boards = markBoards(boards, draw);
+    boards = markWinners(boards, draw);
+
+    // Filter out boards that have won
+    winningBoards = [...winningBoards, ...boards.filter((x) => x.winningNumber !== null)];
+
+    boards = boards.filter((x) => x.winningNumber === null);
+  }
+
+  const lastWinningBoard = winningBoards[winningBoards.length - 1];
+
+  return calculateBoardScore(lastWinningBoard);
+};
+
+const calculateBoardScore = (board: Board) =>
+  board.board
+    .flat()
+    .filter((x) => !x.includes('*'))
+    .map(Number)
+    .reduce((prev, curr) => prev + curr) * parseInt(board.winningNumber);
+
+const parseInput = (input) => {
   const drawOrder = input[0].split(',');
 
   input = input.slice(2);
@@ -9,81 +56,100 @@ export const part1 = (input: string[]): number => {
       return [x.split(' ').filter((x) => x !== '')];
     });
 
-  let boards = spliceIntoChunks(parsed, 5);
+  const boards = spliceIntoChunks(parsed, 5);
 
-  for (const draw of drawOrder) {
-    console.log('draw', draw);
-
-    boards = markBoards(boards, draw);
-
-    // Check for winner
-    const winner = checkWinner(boards);
-
-    if (winner?.length > 0) {
-      console.log(winner);
-
-      return (
-        winner
-          .flat()
-          .filter((x) => !x.includes('*'))
-          .map(Number)
-          .reduce((prev, curr) => prev + curr) * parseInt(draw)
-      );
-    }
-  }
+  return { drawOrder, boards };
 };
 
-const filterWinner = (boards: string[][][], rotate: boolean = false) => {
-  return boards.filter((board) => {
-    // rotate board 90 deg to reuse row-checking logic for columns
-    if (rotate) board = board[0].map((val, index) => board.map((row) => row[index]).reverse());
+const filterWinner = (boards: Board[]): Board[] => {
+  const checkRowReducer = (prev, curr) => (curr.includes('*') ? prev + 1 : prev);
 
-    return board.some((row) => {
-      if (row.reduce((prev, curr) => (curr.includes('*') ? prev + 1 : prev), 0) === 5) {
+  return boards.filter((board) => {
+    // Check for winning row
+    const winningRow = board.board.some((row) => {
+      if (row.reduce(checkRowReducer, 0) === 5) {
         return true;
       }
 
       return false;
     });
-  });
-};
 
-const checkWinner = (boards: string[][][]) => {
-  const winningRowBoard = filterWinner(boards);
-  if (winningRowBoard.length === 1) {
-    return winningRowBoard[0];
-  }
+    // rotate board 90 deg to reuse row-checking logic for columns
+    const rotated = (board.board = board.board[0].map((val, index) =>
+      board.board.map((row) => row[index]).reverse(),
+    ));
 
-  const winningColumnBoard = filterWinner(boards, true);
-  if (winningColumnBoard.length === 1) {
-    return winningColumnBoard[0];
-  }
-
-  return [];
-};
-
-const markBoards = (boards: string[][][], draw: string): string[][][] => {
-  return boards.map((board) => {
-    return board.map((x) => {
-      const index = x.findIndex((el) => el == draw);
-
-      if (index !== -1) {
-        x[index] = `${x[index]}*`;
+    const winningColumn = rotated.some((row) => {
+      if (row.reduce(checkRowReducer, 0) === 5) {
+        return true;
       }
 
-      return x;
+      return false;
     });
+
+    if (winningRow || winningColumn) {
+      return true;
+    }
+
+    return false;
   });
 };
 
-const spliceIntoChunks = (arr, chunkSize): string[][][] => {
-  const res = [];
+const markWinners = (boards: Board[], draw: string): Board[] => {
+  const winningBoards = filterWinner(boards);
+
+  if (winningBoards.length > 0) {
+    return boards.map((board) => {
+      if (winningBoards.some((x) => x.id === board.id)) {
+        return <Board>{ board: board.board, winningNumber: draw, id: board.id };
+      }
+
+      return <Board>{ board: board.board, winningNumber: null, id: board.id };
+    });
+  }
+
+  return boards;
+};
+
+const markBoards = (boards: Board[], draw: string): Board[] => {
+  return boards.map((board) => {
+    return <Board>{
+      board: board.board.map((x) => {
+        const index = x.findIndex((el) => el == draw);
+
+        if (index !== -1) {
+          x[index] = `${x[index]}*`;
+        }
+
+        return x;
+      }),
+      id: board.id,
+      winningNumber: board.winningNumber,
+    };
+  });
+};
+
+const spliceIntoChunks = (arr, chunkSize): Board[] => {
+  let id = 0;
+  const res: Board[] = [];
 
   while (arr.length > 0) {
-    const chunk = arr.splice(0, chunkSize);
+    const chunk: string[][] = arr.splice(0, chunkSize);
 
-    res.push(chunk);
+    res.push({
+      id,
+      board: chunk,
+      winningNumber: null,
+    });
+
+    id += 1;
   }
 
   return res;
 };
+
+interface Board {
+  id: number;
+  board: string[][];
+  winningNumber: string;
+}
